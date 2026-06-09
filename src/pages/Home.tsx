@@ -100,7 +100,7 @@ export default function Home () {
           <div className="hero-content pt-16 flex-col lg:flex-row-reverse gap-16">
             <div className="relative">
               <div ref={imageContainerRef} className="h-[65vh] w-[45vw] min-w-72 overflow-y-scroll rounded-2xl no-scrollbar shadow-2xl">
-                <img src="/imgs/resume.png" alt="resume" className="w-full h-auto" />
+                <img src={`${import.meta.env.BASE_URL}imgs/resume.png`} alt="resume" className="w-full h-auto" />
               </div>
               <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 rounded-b-2xl bg-linear-to-t from-base-100/80 to-transparent" />
             </div>

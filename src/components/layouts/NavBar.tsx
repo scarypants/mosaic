@@ -15,7 +15,7 @@ export default function NavBar ({isHome}: {isHome: boolean}) {
       <main className="navbar shadow-sm bg-base-100 fixed w-full h-16 min-h-16 z-50">
         <div className="flex-1">
           <Link to="/" onClick={handleLogoClick} className="btn btn-ghost text-xl">
-            <img src="/imgs/logo.png" alt="logo" className="w-8" />
+            <img src={`${import.meta.env.BASE_URL}imgs/logo.png`} alt="logo" className="w-8" />
             <h2>MOSAIC</h2>
           </Link>
         </div>
