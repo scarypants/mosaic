@@ -68,6 +68,8 @@ export interface BlockDefinition {
   allowedSizes: BlockSize[]
   component: ComponentType<{block: Block}>
   defaultData: object
+  /** 정렬을 지정하지 않았을 때의 기본값 (미지정 시 left) */
+  defaultAlign?: NonNullable<BlockStyle["textAlign"]>
 }
 
 export interface props {

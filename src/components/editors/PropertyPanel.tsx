@@ -1,6 +1,7 @@
 import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { useDocument } from "../../context/DocumentContext";
 import type { BlockStyle } from "../../types/block";
+import { BLOCK_DEFINITIONS } from "../../data/blockDefinitions";
 
 const FONT_SIZES: { label: string; value: BlockStyle["fontSize"] | "" }[] = [
   { label: "기본값",        value: "" },
@@ -33,6 +34,9 @@ export default function PropertyPanel() {
 
   const style = selectedBlock.style ?? {}
   const update = (patch: Partial<BlockStyle>) => updateBlockStyle(selectedBlock.id, patch)
+
+  const definition = BLOCK_DEFINITIONS.find((d) => d.type === selectedBlock.type)
+  const defaultAlign = definition?.defaultAlign ?? "left"
 
   return (
     <div className="bg-base-300 rounded-box w-56 p-5 h-[calc(100vh-8rem)] flex flex-col gap-5 overflow-y-auto">
@@ -76,7 +80,7 @@ export default function PropertyPanel() {
             <button
               key={value}
               onClick={() => update({ textAlign: value })}
-              className={`btn btn-sm flex-1 ${(style.textAlign ?? "left") === value ? "btn-primary" : "bg-base-100"}`}
+              className={`btn btn-sm flex-1 ${(style.textAlign ?? defaultAlign) === value ? "btn-primary" : "bg-base-100"}`}
             >
               {icon}
             </button>

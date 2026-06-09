@@ -17,6 +17,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     allowedSizes: ["S", "M", "L"],
     component: TitleBlock,
     defaultData: { text: "" } satisfies TitleBlockData,
+    defaultAlign: "center",
   },
   {
     type: "profile",
