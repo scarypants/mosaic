@@ -1,3 +1,4 @@
+// 라우터 정의 — 앱의 모든 경로(URL)와 페이지 매핑을 한 곳에서 관리
 import { createBrowserRouter } from "react-router";
 
 import App from "./App";
@@ -7,6 +8,10 @@ import Editor from "./pages/Editor";
 import Preview from "./pages/Preview";
 import { useEffect } from "react";
 
+/**
+ * HMR(개발 중 핫 리로드) 도중 라우트 상태가 깨졌을 때 보여주는 임시 화면.
+ * 마운트되자마자 페이지를 새로고침해 정상 상태로 복구한다. (개발 편의용)
+ */
 function HMRErrorFallback() {
   useEffect(() => {
     window.location.reload()
@@ -24,27 +29,28 @@ function HMRErrorFallback() {
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
+    element: <App />,   // 공통 레이아웃(App) 아래에 자식 라우트들이 중첩됨
 
     children: [
       {
-        index: true,
+        index: true,        // "/" 기본 페이지
         element: <Home />,
       },
 
       {
-        path: "editor",
+        path: "editor",     // "/editor" — 문서 편집
         element: <Editor />,
         errorElement: <HMRErrorFallback />,
       },
 
       {
-        path: "preview",
+        path: "preview",    // "/preview" — 읽기 전용 미리보기
         element: <Preview />,
         errorElement: <HMRErrorFallback />,
       },
     ],
   },
 ], {
+  // GitHub Pages 등 하위 경로 배포 대응 — vite base(/mosaic/)와 라우터 경로를 일치시킴
   basename: import.meta.env.BASE_URL,
 });

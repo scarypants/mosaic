@@ -2,17 +2,23 @@ import { useDocument } from "../../context/DocumentContext"
 import type { props } from "../../types/block"
 import type { AboutBlockData } from "../../types/blockData"
 
+/**
+ * AboutBlock (자기소개 블록)
+ * - 자유 서술형 자기소개 텍스트 영역. L 사이즈에서는 제목 입력칸이 추가된다.
+ */
 export default function AboutBlock ({ block }: props) {
   const { updateBlockData } = useDocument()
-  
-  if (block.type !== "about") return null 
+
+  if (block.type !== "about") return null   // 타입 가드
   const { title, content } = block.data
 
-  const handleChange = (field: keyof AboutBlockData) => 
+  // 필드명을 받아 해당 필드만 갱신하는 onChange 핸들러 생성 (커링)
+  const handleChange = (field: keyof AboutBlockData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       updateBlockData(block.id, { [field]: e.target.value })
     }
 
+  // 블록 크기별 레이아웃 (S/M: 내용만, L: 제목+내용)
   const renderContentBySize = () => {
     switch(block.size) { 
       case "S":

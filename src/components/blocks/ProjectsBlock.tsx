@@ -2,27 +2,36 @@ import { useDocument } from "../../context/DocumentContext"
 import type { props } from "../../types/block"
 import type { ProjectBlockData } from "../../types/blockData"
 
-const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 3MB
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 프로젝트 이미지 최대 용량 3MB
 
+/**
+ * ProjectsBlock (프로젝트 블록)
+ * - 프로젝트 이름/소개/역할/링크와 대표 이미지를 입력
+ * - ProfileBlock 과 동일하게 이미지를 base64 로 변환해 보관
+ * - 사이즈 S/M/L 에 따라 이미지 유무와 입력 항목이 달라짐
+ */
 export default function ProjectsBlock({ block }: props) {
   const { updateBlockData, setToastMsg } = useDocument()
 
-  if (block.type !== "project") return null
+  if (block.type !== "project") return null   // 타입 가드
   const { imageUrl, title, description, role, link } = block.data
 
+  // 텍스트 입력 공통 핸들러 (필드별 생성)
   const handleChange = (field: keyof ProjectBlockData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       updateBlockData(block.id, { [field]: e.target.value })
     }
 
+  // 토스트 에러 안내 (3초 후 제거)
   const showError = (msg: string) => {
     setToastMsg(msg)
     setTimeout(() => setToastMsg(null), 3000)
   }
 
+  // [기능] 프로젝트 이미지 업로드 — 타입/용량 검증 후 base64 변환 저장
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    e.target.value = ""
+    e.target.value = ""   // 같은 파일 재선택 대응
     if (!file) return
     if (!file.type.startsWith("image/")) {
       showError("이미지 파일만 업로드할 수 있습니다.")
@@ -38,6 +47,7 @@ export default function ProjectsBlock({ block }: props) {
     reader.readAsDataURL(file)
   }
 
+  // 블록 크기별 레이아웃 반환
   const renderContentBySize = () => {
     switch (block.size) {
       case "S":

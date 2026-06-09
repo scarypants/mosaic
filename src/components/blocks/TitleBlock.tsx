@@ -1,15 +1,22 @@
 import { useDocument } from "../../context/DocumentContext"
 import type { props } from "../../types/block"
 
+/**
+ * TitleBlock (제목 블록)
+ * - 문서의 큰 제목을 입력하는 블록. 기본 정렬이 가운데(text-center)이다.
+ * - 사이즈(S/M/L)에 따라 글자 크기만 달라지고 입력 동작은 동일
+ */
 export default function TitleBlock ({ block }: props) {
   const { updateBlockData } = useDocument()
 
-  if (block.type !== "title") return null 
+  if (block.type !== "title") return null   // 타입 가드 — title 블록일 때만 렌더
   const { text } = block.data
 
+  // 입력값을 전역 문서 상태에 반영 (제어 컴포넌트)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateBlockData(block.id, { text: e.target.value })
   }
+  // 블록 크기에 따라 적절한 글자 크기의 입력 UI 반환
   const renderContentBySize = () => {
     switch (block.size) {
       case "S":

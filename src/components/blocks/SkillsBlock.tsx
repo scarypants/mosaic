@@ -2,15 +2,22 @@ import { useDocument } from "../../context/DocumentContext";
 import type { props } from "../../types/block";
 import type { SkillBlockData } from "../../types/blockData";
 
+// 취득일 입력 형식 검증 — S(연도 4자리) / L(YYYY.MM.DD)
 const YEAR_PATTERN = "[0-9]{4}"
 const DATE_PATTERN = "[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}"
 
+/**
+ * SkillsBlock (자격증 블록)
+ * - 여러 자격증 항목(items 배열)을 입력
+ * - S 사이즈: 취득년도+이름만, L 사이즈: 취득일자/면허명/등급/시험처 4열 표
+ */
 export default function SkillsBlock({ block }: props) {
   const { updateBlockData } = useDocument()
 
-  if (block.type !== "skill") return null
+  if (block.type !== "skill") return null   // 타입 가드
   const { items } = block.data
 
+  // [기능] 특정 항목(index)의 특정 필드(field)만 불변 갱신
   const handleChange = (index: number, field: keyof SkillBlockData["items"][number]) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newItems = items.map((item, i) =>
@@ -19,6 +26,7 @@ export default function SkillsBlock({ block }: props) {
       updateBlockData(block.id, { items: newItems });
     };
 
+  // 블록 크기별 레이아웃 반환 (S: 간단 / L: 표)
   const renderContentBySize = () => {
     switch (block.size) {
       case "S":

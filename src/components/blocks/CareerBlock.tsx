@@ -3,16 +3,25 @@ import { useReadOnly } from "../../context/ReadOnlyContext";
 import type { props } from "../../types/block";
 import type { CareerBlockData } from "../../types/blockData";
 
+// 기간 입력 형식 검증 (YYYY.MM.)
 const PERIOD_PATTERN = "[0-9]{4}\\.[0-9]{2}\\.?"
 const PERIOD_TITLE = "YYYY.MM. 형식으로 입력하세요 (예: 2020.03.)"
 
+/**
+ * CareerBlock (경력 블록)
+ * - 여러 경력 항목(items 배열)을 표 형태로 입력
+ * - L 사이즈: 기간/근무처/직위 3열 표, XL 사이즈: 직무·직급·세부설명까지 상세 입력
+ * - 읽기 전용(미리보기)에서는 비어 있는 기간의 "~" 구분자를 숨김
+ */
 export default function CareerBlock({ block }: props) {
   const { updateBlockData } = useDocument()
   const isReadOnly = useReadOnly()
 
-  if (block.type !== "career") return null
+  if (block.type !== "career") return null   // 타입 가드
   const { items } = block.data
 
+  // [기능] 특정 항목(index)의 특정 필드(field)만 갱신
+  // items 배열을 불변 방식으로 복사하면서 해당 항목만 교체
   const handleChange = (index: number, field: keyof CareerBlockData["items"][number]) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newItems = items.map((item, i) =>
@@ -21,6 +30,7 @@ export default function CareerBlock({ block }: props) {
       updateBlockData(block.id, { items: newItems });
     };
 
+  // 블록 크기별 레이아웃 반환 (L: 표 / XL: 상세 카드)
   const renderContentBySize = () => {
     switch (block.size) {
       case "L":

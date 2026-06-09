@@ -3,6 +3,7 @@ import { useDocument } from "../../context/DocumentContext";
 import type { BlockStyle } from "../../types/block";
 import { BLOCK_DEFINITIONS } from "../../data/blockDefinitions";
 
+// 속성 패널의 글씨 크기 선택 옵션 (value "" = 블록 기본값 사용)
 const FONT_SIZES: { label: string; value: BlockStyle["fontSize"] | "" }[] = [
   { label: "기본값",        value: "" },
   { label: "XS  (10px)",   value: "xs" },
@@ -20,21 +21,30 @@ const FONT_WEIGHTS: { label: string; value: BlockStyle["fontWeight"] }[] = [
   { label: "Bold",   value: "bold" },
 ]
 
+// 정렬 버튼 옵션 (왼쪽/가운데/오른쪽)
 const ALIGN_OPTIONS: { icon: React.ReactNode; value: NonNullable<BlockStyle["textAlign"]> }[] = [
   { icon: <AlignLeft size={15} />,   value: "left" },
   { icon: <AlignCenter size={15} />, value: "center" },
   { icon: <AlignRight size={15} />,  value: "right" },
 ]
 
+/**
+ * PropertyPanel (블록 속성 편집 패널)
+ * - 선택된 블록의 글씨 크기/굵기/정렬/테두리를 수정
+ * - 선택된 블록이 없으면 아무것도 렌더하지 않음
+ * - 정렬은 블록 종류별 기본값(defaultAlign)을 기준으로 표시 (예: 제목 블록은 가운데가 기본)
+ */
 export default function PropertyPanel() {
   const { selectedBlockId, blocks, updateBlockStyle } = useDocument()
   const selectedBlock = selectedBlockId ? blocks.find((b) => b.id === selectedBlockId) : null
 
-  if (!selectedBlock) return null
+  if (!selectedBlock) return null   // 선택된 블록이 없으면 패널 숨김
 
   const style = selectedBlock.style ?? {}
+  // 선택된 블록의 스타일을 부분 갱신하는 헬퍼
   const update = (patch: Partial<BlockStyle>) => updateBlockStyle(selectedBlock.id, patch)
 
+  // 블록 정의에서 기본 정렬을 가져옴 — 정렬을 따로 지정하지 않았을 때 표시 기준
   const definition = BLOCK_DEFINITIONS.find((d) => d.type === selectedBlock.type)
   const defaultAlign = definition?.defaultAlign ?? "left"
 
@@ -73,6 +83,7 @@ export default function PropertyPanel() {
         </select>
       </div>
 
+      {/* 정렬 — 현재 값이 없으면 블록 기본값(defaultAlign)을 선택 상태로 표시 */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold text-base-content/60">정렬</label>
         <div className="flex gap-1">
@@ -88,6 +99,7 @@ export default function PropertyPanel() {
         </div>
       </div>
 
+      {/* 테두리 표시 토글 (기본값 켜짐) */}
       <div className="flex items-center justify-between">
         <label className="text-xs font-semibold text-base-content/60">테두리</label>
         <input

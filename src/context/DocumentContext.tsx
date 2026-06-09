@@ -1,3 +1,6 @@
+// 문서 전역 상태(Context)
+// - 블록 목록(blocks), 선택 상태, 토스트 메시지를 앱 전체에 제공
+// - 블록 추가/수정/이동/삭제, 템플릿 로드, 파일/로컬스토리지 입출력, 자동저장을 담당
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { type Block, type BlockType, type BlockSize, type BlockStyle, SIZE_SPAN } from "../types/block";
@@ -5,7 +8,7 @@ import { BLOCK_DEFINITIONS } from "../data/blockDefinitions";
 import { COLS, ROWS } from "../types/document";
 import { TEMPLATES, type TemplateName } from "../data/templates";
 
-const STORAGE_KEY = "mosaic_autosave"
+const STORAGE_KEY = "mosaic_autosave"   // 자동저장에 쓰는 localStorage 키
 
 // crypto.randomUUID는 보안 컨텍스트에서만 동작하므로 폴백 제공
 function genId(): string {
@@ -58,10 +61,14 @@ interface DocumentContextType {
 
 const DocumentContext = createContext<DocumentContextType | null>(null);
 
+/**
+ * DocumentProvider — 문서 상태와 조작 함수들을 하위 트리에 제공하는 Provider.
+ * App 최상단에서 감싸므로 모든 페이지/컴포넌트가 useDocument() 로 접근 가능.
+ */
 export function DocumentProvider({ children }: { children: ReactNode }) {
-  const [blocks, setBlocks] = useState<Block[]>([])
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
-  const [toastMsg, setToastMsg] = useState<string | null>(null)
+  const [blocks, setBlocks] = useState<Block[]>([])                       // 문서의 모든 블록
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)  // 현재 선택된 블록
+  const [toastMsg, setToastMsg] = useState<string | null>(null)          // 전역 토스트 메시지
 
   // 블록이 있을 때만 자동저장 (용량 초과 등 실패해도 앱이 죽지 않도록 try/catch)
   useEffect(() => {
@@ -75,6 +82,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     }
   }, [blocks])
 
+  // 저장된 최근 문서가 있는지 확인 (홈의 "Recent File" 활성화 판단)
   const hasSavedData = (): boolean => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
@@ -86,6 +94,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // 로컬스토리지의 자동저장본을 불러옴 — 성공 시 true (손상 항목은 검증으로 걸러냄)
   const loadFromStorage = (): boolean => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
@@ -100,12 +109,14 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // [기능] 블록 추가 — 그리드에서 빈 자리를 찾아 새 블록을 배치
   const addBlock = (type: BlockType, size: BlockSize) => {
     const definition = BLOCK_DEFINITIONS.find((d) => d.type === type)
     if (!definition) return
 
     const { col: spanCol, row: spanRow } = SIZE_SPAN[size]
 
+    // 좌상단부터 한 칸씩 훑어 블록이 들어갈 빈 영역의 좌표를 반환 (없으면 null)
     const findPosition = (currentBlocks: Block[]) => {
       for (let y = 0; y <= ROWS - spanRow; y++) {
         for (let x = 0; x <= COLS - spanCol; x++) {
@@ -128,6 +139,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     setBlocks((prev) => {
       const position = findPosition(prev) ?? undefined;
       if (!position) {
+        // 빈 자리가 없으면 추가하지 않고 안내
         setToastMsg("그리드에 공간이 부족합니다.")
         setTimeout(() => setToastMsg(null), 3000)
         return prev
@@ -140,28 +152,32 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
           label: definition.label,
           size,
           position,
-          data: structuredClone(definition.defaultData),
+          data: structuredClone(definition.defaultData),  // 기본 데이터를 깊은 복사해 블록 간 공유 방지
         } as Block,
       ];
     });
   };
 
+  // [기능] 블록 내용(data) 부분 갱신 — 입력 필드 변경 시 사용
   const updateBlockData = (id: string, data: Partial<Block["data"]>) => {
     setBlocks((prev) =>
       prev.map((block) => block.id === id ? { ...block, data: { ...block.data, ...data } } as Block : block)
     )
   }
 
+  // [기능] 블록 스타일(style) 부분 갱신 — 속성 패널에서 사용
   const updateBlockStyle = (id: string, style: Partial<BlockStyle>) => {
     setBlocks((prev) =>
       prev.map((block) => block.id === id ? { ...block, style: { ...block.style, ...style } } : block)
     )
   }
 
+  // [기능] 블록 삭제
   const removeBlock = (id: string) => {
     setBlocks((prev) => prev.filter((b) => b.id !== id))
   }
 
+  // [기능] 블록 이동 — 드래그&드롭으로 결정된 새 그리드 좌표로 position 갱신
   const moveBlock = (id: string, x: number, y: number) => {
     setBlocks((prev) =>
       prev.map((block) => (block.id === id ? {...block, position: {x, y}} : block))
@@ -175,6 +191,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     setSelectedBlockId(null)
   }
 
+  // [기능] 문서 비우기 — 블록과 자동저장본을 모두 제거 (새 문서/템플릿 변경 시)
   const clearBlocks = () => {
     setBlocks([])
     setSelectedBlockId(null)
@@ -185,6 +202,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // [기능] 템플릿 로드 — 템플릿 정의대로 새 블록들을 생성해 문서를 구성
   const loadTemplate = (name: TemplateName) => {
     const template = TEMPLATES[name]
     if (!template) {
@@ -232,6 +250,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         setToastMsg,
       }}>
       {children}
+      {/* 전역 토스트 — 어느 화면에서든 안내 메시지를 화면 상단 중앙에 표시 */}
       {toastMsg && (
         <div className="toast toast-top toast-center z-50">
           <div className="alert alert-info">
@@ -243,6 +262,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// 문서 컨텍스트 접근 훅 — Provider 밖에서 쓰면 즉시 에러로 알림
 // eslint-disable-next-line react-refresh/only-export-components
 export function useDocument() {
   const context = useContext(DocumentContext);

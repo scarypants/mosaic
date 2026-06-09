@@ -3,32 +3,43 @@ import type { props } from "../../types/block";
 import type { ProfileBlockData } from "../../types/blockData";
 
 
+// 입력 검증용 정규식 — 영문 이름 / 전화번호 형식
 const ENG_NAME_PATTERN = "[A-Za-z][A-Za-z .\\-]*"
 const PHONE_PATTERN = "0[0-9]{1,2}-?[0-9]{3,4}-?[0-9]{4}"
 
-const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 3MB
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 프로필 사진 최대 용량 3MB
 
+/**
+ * ProfileBlock (인적사항 블록)
+ * - 이름/영문명/연락처/이메일/생년월일과 프로필 사진을 입력
+ * - 사진은 파일을 base64(DataURL)로 변환해 블록 데이터에 저장 (별도 서버 없이 자체 보관)
+ * - 사이즈 S/M/L 에 따라 표시 항목과 레이아웃이 달라짐
+ */
 export default function ProfileBlock ({ block }: props) {
   const { updateBlockData, setToastMsg } = useDocument()
 
-  if (block.type !== "profile") return null
+  if (block.type !== "profile") return null   // 타입 가드
   const { name, englishName, imageUrl, email, phone, bid } = block.data
 
+  // 텍스트 입력 공통 핸들러 (필드별 생성)
   const handleChange = (field: keyof ProfileBlockData) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateBlockData(block.id, { [field]: e.target.value })
     }
 
-  const today = new Date().toISOString().split("T")[0]
+  const today = new Date().toISOString().split("T")[0]   // 생년월일 max 값(미래 날짜 차단)
 
+  // 토스트로 에러 안내 후 3초 뒤 자동 제거
   const showError = (msg: string) => {
     setToastMsg(msg)
     setTimeout(() => setToastMsg(null), 3000)
   }
 
+  // [기능] 프로필 사진 업로드
+  // 이미지 타입/용량을 검증한 뒤 FileReader 로 base64 변환해 imageUrl 에 저장
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    e.target.value = ""
+    e.target.value = ""   // 같은 파일 재선택 시에도 onChange 발생하도록 초기화
     if (!file) return
     if (!file.type.startsWith("image/")) {
       showError("이미지 파일만 업로드할 수 있습니다.")
@@ -44,6 +55,7 @@ export default function ProfileBlock ({ block }: props) {
     reader.readAsDataURL(file)
   }
 
+  // 블록 크기별 레이아웃 반환
   const renderContentBySize = () => {
     switch(block.size) {
       case "S":

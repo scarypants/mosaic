@@ -9,22 +9,30 @@ import type { Block } from "../../types/block";
 import { BLOCK_DEFINITIONS } from "../../data/blockDefinitions";
 import { COLS, ROWS, A4_WIDTH, A4_HEIGHT, PAGE_MARGIN, CELL_W, CELL_H } from "../../types/document";
 
+/**
+ * DocumentRenderer (문서 캔버스)
+ * - A4 비율의 그리드 위에 블록을 배치/이동하는 핵심 편집 영역
+ * - Ctrl+휠 확대/축소, 드래그&드롭 이동, 드롭 가능 여부 하이라이트를 담당
+ * - 에디터/미리보기 공용 (읽기 전용에서는 그리드 오버레이·드래그를 끔)
+ */
 export default function DocumentRenderer() {
-  const [scale, setScale] = useState(1);
-  const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number } | null>(null);
-  const [draggingBlock, setDraggingBlock] = useState<Block | null>(null);
-  const a4Ref = useRef<HTMLDivElement>(null);
-  const startPointerRef = useRef({ x: 0, y: 0 });
+  const [scale, setScale] = useState(1);                 // 캔버스 확대/축소 배율
+  const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number } | null>(null);  // 드래그 중 미리보기 셀
+  const [draggingBlock, setDraggingBlock] = useState<Block | null>(null);  // 현재 드래그 중인 블록
+  const a4Ref = useRef<HTMLDivElement>(null);            // A4 캔버스 DOM (좌표 계산 기준)
+  const startPointerRef = useRef({ x: 0, y: 0 });        // 드래그 시작 시 포인터 좌표
   const isReadOnly = useReadOnly();
   const { blocks, setSelectedBlockId, moveBlock } = useDocument();
 
+  // 8px 이상 움직여야 드래그 시작 — 단순 클릭(선택)과 드래그를 구분
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
+  // [기능] Ctrl + 휠로 캔버스 확대/축소 (0.3 ~ 3배 사이로 제한)
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey) return;
+      if (!e.ctrlKey) return;       // Ctrl 없는 휠은 일반 스크롤로 둠
       e.preventDefault();
       setScale((prev) => Math.min(3, Math.max(0.3, prev - e.deltaY * 0.001)));
     };
@@ -32,6 +40,8 @@ export default function DocumentRenderer() {
     return () => document.removeEventListener("wheel", handleWheel);
   }, []);
 
+  // 화면 좌표(clientX/Y) → 그리드 셀 좌표(x,y) 변환. 캔버스 밖이면 null.
+  // scale 을 반영해 확대/축소 상태에서도 정확한 셀을 계산
   const getCell = (clientX: number, clientY: number): { x: number; y: number } | null => {
     if (!a4Ref.current) return null;
     const rect = a4Ref.current.getBoundingClientRect();
@@ -41,13 +51,15 @@ export default function DocumentRenderer() {
     return { x, y };
   };
 
+  // (x,y)에 해당 블록을 놓을 수 있는지 검사
+  // - 그리드 경계를 벗어나지 않고, 다른 블록과 겹치지 않아야 함 (사각형 충돌 검사)
   const canFit = (blockId: string, x: number, y: number) => {
     const block = blocks.find((b) => b.id === blockId);
     if (!block) return false;
     const { col: spanCol, row: spanRow } = SIZE_SPAN[block.size];
     if (x + spanCol > COLS || y + spanRow > ROWS) return false;
     return !blocks.some((b) => {
-      if (b.id === blockId || !b.position) return false;
+      if (b.id === blockId || !b.position) return false;   // 자기 자신/미배치 블록은 제외
       const { col: bCol, row: bRow } = SIZE_SPAN[b.size];
       return (
         x < b.position.x + bCol && x + spanCol > b.position.x &&
@@ -56,6 +68,7 @@ export default function DocumentRenderer() {
     });
   };
 
+  // 드래그 시작 — 대상 블록과 시작 포인터 좌표 기록
   const handleDragStart = (event: DragStartEvent) => {
     const block = blocks.find((b) => b.id === event.active.id);
     setDraggingBlock(block ?? null);
@@ -63,6 +76,7 @@ export default function DocumentRenderer() {
     startPointerRef.current = { x: e.clientX, y: e.clientY };
   };
 
+  // 드래그 중 — 현재 포인터 위치의 셀을 계산해 하이라이트(hoveredCell) 갱신
   const handleDragMove = (event: DragMoveEvent) => {
     const x = startPointerRef.current.x + event.delta.x;
     const y = startPointerRef.current.y + event.delta.y;
@@ -71,6 +85,7 @@ export default function DocumentRenderer() {
     if (cell.x !== hoveredCell?.x || cell.y !== hoveredCell?.y) setHoveredCell(cell);
   };
 
+  // 드래그 종료 — 놓을 수 있는 위치면 블록 이동, 아니면 무시. 드래그 상태 초기화
   const handleDragEnd = (event: DragEndEvent) => {
     const id = String(event.active.id);
     const x = startPointerRef.current.x + event.delta.x;
@@ -81,10 +96,11 @@ export default function DocumentRenderer() {
     setHoveredCell(null);
   };
 
+  // position 유무로 분리 — 배치된 블록은 그리드에, 미배치 블록은 하단에 모아 표시
   const positionedBlocks = blocks.filter((b) => b.position);
   const unpositionedBlocks = blocks.filter((b) => !b.position);
 
-  const draggingSpan = draggingBlock ? SIZE_SPAN[draggingBlock.size] : null;
+  const draggingSpan = draggingBlock ? SIZE_SPAN[draggingBlock.size] : null;  // 드롭 미리보기 크기
 
   return (
     <div className="w-full min-h-full mt-10 flex items-start justify-center py-12">

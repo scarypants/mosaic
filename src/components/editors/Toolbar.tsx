@@ -3,22 +3,33 @@ import { Trash, RefreshCcw, Eye, MoveLeft, ArrowDownToLine, FileOutput, Upload }
 import { useLocation, useNavigate } from "react-router";
 import { useDocument } from "../../context/DocumentContext";
 
+/**
+ * Toolbar (상단 작업 도구 모음)
+ * - 현재 경로에 따라 다른 버튼 세트를 보여줌
+ *   · /editor  : 삭제 / 가져오기 / 템플릿 변경 / 미리보기
+ *   · /preview : 에디터로 돌아가기 / .mosaic 저장 / PDF 내보내기
+ */
 export default function Toolbar () {
   const { blocks, selectedBlockId, removeBlock, clearBlocks, importBlocks, setToastMsg } = useDocument()
   const navigate = useNavigate()
-  const location = useLocation()
-  const importInputRef = useRef<HTMLInputElement>(null)
+  const location = useLocation()   // 경로에 따라 표시할 버튼 결정
+  const importInputRef = useRef<HTMLInputElement>(null)   // 숨겨진 파일 input 트리거용
 
+  // 선택된 블록 없이 삭제를 누른 경우 안내
   const errorRemoveBlock = () => {
     setToastMsg("선택된 블록이 없습니다.")
     setTimeout(() => setToastMsg(null), 3000)
   }
 
+  // 토스트 메시지 표시 (3초 후 자동 제거)
   const showToast = (msg: string) => {
     setToastMsg(msg)
     setTimeout(() => setToastMsg(null), 3000)
   }
 
+  // [기능] PDF 내보내기
+  // 브라우저 인쇄(window.print) 기능 활용. 인쇄 시에는 확대/축소 transform 을 잠시 해제해
+  // 원본 크기로 출력되도록 하고, 끝나면 원래 transform 을 복구
   const handleExportPDF = () => {
     const element = document.querySelector("[data-pdf-target]") as HTMLElement | null
     if (!element) {
@@ -35,11 +46,14 @@ export default function Toolbar () {
       console.error("PDF 내보내기 실패:", err)
       showToast("PDF 내보내기에 실패했습니다.")
     } finally {
+      // 성공/실패와 관계없이 화면 표시를 원래대로 되돌림
       element.style.transform = prevTransform
       element.style.transformOrigin = prevOrigin
     }
   }
 
+  // [기능] .mosaic 파일로 저장
+  // 현재 blocks 를 JSON(Blob)으로 만들어 다운로드. 생성한 ObjectURL 은 finally 에서 해제(메모리 누수 방지)
   const handleSaveMosaic = () => {
     if (blocks.length === 0) {
       showToast("저장할 내용이 없습니다.")
@@ -62,9 +76,11 @@ export default function Toolbar () {
     }
   }
 
+  // [기능] .mosaic 파일 가져오기 (에디터 내에서)
+  // 확장자 검증 → JSON 파싱 → importBlocks(내부 구조 검증)로 현재 문서 교체
   const handleImportMosaic = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    e.target.value = ""
+    e.target.value = ""   // 같은 파일 재선택 대응
     if (!file) return
     if (!file.name.endsWith(".mosaic")) {
       showToast(".mosaic 파일만 불러올 수 있습니다.")
@@ -80,7 +96,9 @@ export default function Toolbar () {
     }
   }
 
+  // 현재 경로(editor/preview)에 맞는 버튼 모음을 반환
   const renderContentByLocation = () => {
+    // 편집 화면 툴바: 삭제 / 가져오기 / 템플릿 변경 / 미리보기
     if (location.pathname === "/editor") {
       return(
         <ul className="menu menu-horizontal bg-base-300 rounded-box flex gap-16">
@@ -115,6 +133,7 @@ export default function Toolbar () {
           <input ref={importInputRef} type="file" accept=".mosaic" className="hidden" onChange={handleImportMosaic} />
         </ul>
       )
+    // 미리보기 화면 툴바: 에디터로 돌아가기 / .mosaic 저장 / PDF 내보내기
     } else if (location.pathname === "/preview") {
       return(
         <ul className="menu menu-horizontal bg-base-300 rounded-box flex gap-24 flex-nowrap">

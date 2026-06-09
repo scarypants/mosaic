@@ -3,16 +3,24 @@ import { useReadOnly } from "../../context/ReadOnlyContext"
 import type { props } from "../../types/block"
 import type { EducationBlockData } from "../../types/blockData"
 
+// 기간 입력 형식 검증 (YYYY.MM.)
 const PERIOD_PATTERN = "[0-9]{4}\\.[0-9]{2}\\.?"
 const PERIOD_TITLE = "YYYY.MM. 형식으로 입력하세요 (예: 2020.03.)"
 
+/**
+ * EducationBlock (학력 블록)
+ * - 여러 학력 항목(items 배열)을 입력. 졸업여부는 select(재학/휴학/졸업)
+ * - M 사이즈: 간단 목록, L 사이즈: 기간/학교/학과/졸업여부 4열 표
+ * - 읽기 전용에서는 select 대신 텍스트로 졸업여부를 표시
+ */
 export default function EducationBlock({ block }: props) {
   const { updateBlockData } = useDocument()
   const isReadOnly = useReadOnly()
 
-  if (block.type !== "education") return null
+  if (block.type !== "education") return null   // 타입 가드
   const { items } = block.data
 
+  // [기능] 특정 항목(index)의 특정 필드(field)만 불변 갱신
   const handleChange = (index: number, field: keyof EducationBlockData["items"][number]) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const newItems = items.map((item, i) =>
@@ -21,6 +29,7 @@ export default function EducationBlock({ block }: props) {
       updateBlockData(block.id, { items: newItems });
     };
 
+  // 블록 크기별 레이아웃 반환 (M: 간단 / L: 표)
   const renderContentBySize = () => {
     switch (block.size) {
       case "M":
