@@ -1,0 +1,101 @@
+body {
+  background-color: #E8E8E8
+}
+
+body.snap-home {
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  height: 100%;
+}
+
+.preview-block input::placeholder,
+.preview-block textarea::placeholder {
+  color: transparent;
+}
+
+.preview-block input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.preview-block input,
+.preview-block textarea,
+.preview-block select {
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+.preview-block button,
+.preview-block label {
+  pointer-events: none;
+}
+
+.block-text-xs * { font-size: 0.65rem !important; }
+.block-text-sm * { font-size: 0.8rem !important; }
+.block-text-base * { font-size: 1rem !important; }
+.block-text-lg * { font-size: 1.2rem !important; }
+.block-text-xl * { font-size: 1.5rem !important; }
+.block-text-2xl * { font-size: 2rem !important; }
+.block-text-3xl * { font-size: 3rem !important; }
+
+/* DaisyUI .input 이 아닌 표 형태 plain input 검증 — 입력을 마친 뒤(:user-invalid)에만 빨간 표시 */
+.field-validate:user-invalid {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.08);
+  border-radius: 2px;
+}
+/* 미리보기에서는 검증 표시 숨김 */
+.preview-block .field-validate:user-invalid {
+  color: inherit;
+  background-color: transparent;
+}
+
+.block-align-left,  .block-align-left *,
+.block-align-left input,  .block-align-left textarea,  .block-align-left select   { text-align: left !important; }
+.block-align-center, .block-align-center *,
+.block-align-center input, .block-align-center textarea, .block-align-center select { text-align: center !important; }
+.block-align-right, .block-align-right *,
+.block-align-right input, .block-align-right textarea, .block-align-right select  { text-align: right !important; }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  /* 문서 외 모든 요소 숨김 */
+  body * {
+    visibility: hidden;
+  }
+
+  /* A4 문서와 그 자식만 보이게 */
+  [data-pdf-target],
+  [data-pdf-target] * {
+    visibility: visible;
+  }
+
+  /* 문서를 페이지 좌상단에 정확히 배치 */
+  [data-pdf-target] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    padding: 5.3mm !important;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
