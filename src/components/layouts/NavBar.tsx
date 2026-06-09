@@ -23,9 +23,9 @@ export default function NavBar ({isHome}: {isHome: boolean}) {
         {isHome &&
           <div className="flex-none">
             <ul className="menu menu-horizontal px-1">
-              <li><a href="/#templates">TEMPLATE</a></li>
-              <li><a href="/#about">ABOUT</a></li>
-              <li><a href="/#start">START</a></li>
+              <li><a href={`${import.meta.env.BASE_URL}#templates`}>TEMPLATE</a></li>
+              <li><a href={`${import.meta.env.BASE_URL}#about`}>ABOUT</a></li>
+              <li><a href={`${import.meta.env.BASE_URL}#start`}>START</a></li>
             </ul>
           </div>}
       </main>
