@@ -1,5 +1,5 @@
 /**
- * 제목 블록 데이터
+ * 제목 블록 데이터 타입
  * - S: { text }
  * - M: { text }
  * - L: { text } 
@@ -9,7 +9,7 @@ export interface TitleBlockData {
 }
 
 /**
- * 프로필 블록 데이터
+ * 프로필 블록 데이터 타입
  * - S: { name, englishName, phone }
  * - M: { imageUrl, name, englishName, email, phone }
  * - L: { imageUrl, name, englishName, email, phone, bid }
@@ -24,7 +24,7 @@ export interface ProfileBlockData {
 }
 
 /**
- * 소개 블록 데이터
+ * 소개 블록 데이터 타입
  * - S: { content }
  * - M: { content }
  * - L: { title, content }
@@ -35,7 +35,7 @@ export interface AboutBlockData {
 }
 
 /**
- * 학력 블록 데이터
+ * 학력 블록 데이터 타입
  * - M: { [ periodStart, periodEnd, school, major, graduated ] }
  * - L: { [ periodStart, periodEnd, school, major, graduated ] }
  */
@@ -50,7 +50,7 @@ export interface EducationBlockData {
 } 
 
 /**
- * 경력 블록 데이터
+ * 경력 블록 데이터 타입
  * - L: { [ periodStart, periodEnd, company, role ] }
  * - XL: { [ periodStart, periodEnd, company, description, role, task1, task2 ] }
  */
@@ -67,7 +67,7 @@ export interface CareerBlockData {
 }
 
 /**
- * 프로젝트 블록 데이터
+ * 프로젝트 블록 데이터 타입
  * - S: { name, description, role, link }
  * - M: { imageUrl, name, description, link }
  * - L: { imageUrl, name, description, role, link }
@@ -81,7 +81,7 @@ export interface ProjectBlockData {
 }
 
 /**
- * 자격증 블록 데이터
+ * 자격증 블록 데이터 타입
  * - S: { [ date, name ] }
  * - L: { [ date, name, level, organization ] }
  */

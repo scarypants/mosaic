@@ -20,8 +20,12 @@ export default function CareerBlock({ block }: props) {
   if (block.type !== "career") return null   // 타입 가드
   const { items } = block.data
 
-  // [기능] 특정 항목(index)의 특정 필드(field)만 갱신
-  // items 배열을 불변 방식으로 복사하면서 해당 항목만 교체
+  /**
+   * 경력 목록(items) 중 특정 항목의 특정 필드만 갱신하는 핸들러를 만들어 반환
+   * - items 배열을 불변 방식으로 복사하면서 해당 항목만 교체한다.
+   * @param index 갱신할 항목의 인덱스
+   * @param field 갱신할 필드명 (periodStart/company/role 등)
+   */
   const handleChange = (index: number, field: keyof CareerBlockData["items"][number]) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newItems = items.map((item, i) =>
@@ -30,7 +34,7 @@ export default function CareerBlock({ block }: props) {
       updateBlockData(block.id, { items: newItems });
     };
 
-  // 블록 크기별 레이아웃 반환 (L: 표 / XL: 상세 카드)
+  /** 블록 크기별 레이아웃 반환 (L: 3열 표 / XL: 직무·직급·세부설명까지 상세 입력) */
   const renderContentBySize = () => {
     switch (block.size) {
       case "L":

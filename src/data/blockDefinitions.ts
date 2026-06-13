@@ -9,6 +9,16 @@ import type { BlockDefinition } from "../types/block";
 import { User, Type, File, GraduationCap } from "lucide-react";
 import type { AboutBlockData, CareerBlockData, EducationBlockData, ProfileBlockData, ProjectBlockData, SkillBlockData, TitleBlockData } from "../types/blockData";
 
+/**
+ * 초기 블록 정의
+ * - type
+ * - label
+ * - icon
+ * - allowedSizes
+ * - component
+ * - defaultData
+ * - defaultAlign?
+ */
 export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   {
     type: "title",

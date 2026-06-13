@@ -6,8 +6,14 @@ interface TemplateBlock {
   position: { x: number; y: number }
 }
 
+/**
+ * 템플릿 종류
+ */
 export type TemplateName = "resume" | "portfolio"
 
+/**
+ * 템플릿 별 블록 구조
+ */
 export const TEMPLATES: Record<TemplateName, TemplateBlock[]> = {
   resume: [
     { type: "title",     size: "L", position: { x: 0, y: 0 } },

@@ -12,11 +12,12 @@ export default function TitleBlock ({ block }: props) {
   if (block.type !== "title") return null   // 타입 가드 — title 블록일 때만 렌더
   const { text } = block.data
 
-  // 입력값을 전역 문서 상태에 반영 (제어 컴포넌트)
+  /** 제목 입력값을 전역 문서 상태에 반영 (제어 컴포넌트) */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateBlockData(block.id, { text: e.target.value })
   }
-  // 블록 크기에 따라 적절한 글자 크기의 입력 UI 반환
+
+  /** 블록 크기(S/M/L)에 따라 글자 크기만 다른 입력 UI 를 반환 */
   const renderContentBySize = () => {
     switch (block.size) {
       case "S":

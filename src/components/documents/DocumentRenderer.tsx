@@ -29,7 +29,8 @@ export default function DocumentRenderer() {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  // [기능] Ctrl + 휠로 캔버스 확대/축소 (0.3 ~ 3배 사이로 제한)
+  // Ctrl + 휠로 캔버스 확대/축소 (0.3 ~ 3배 사이로 제한)
+  // passive:false 로 등록해야 preventDefault 로 브라우저 기본 확대를 막을 수 있음
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (!e.ctrlKey) return;       // Ctrl 없는 휠은 일반 스크롤로 둠
@@ -40,8 +41,11 @@ export default function DocumentRenderer() {
     return () => document.removeEventListener("wheel", handleWheel);
   }, []);
 
-  // 화면 좌표(clientX/Y) → 그리드 셀 좌표(x,y) 변환. 캔버스 밖이면 null.
-  // scale 을 반영해 확대/축소 상태에서도 정확한 셀을 계산
+  /**
+   * 화면 좌표(clientX/Y)를 그리드 셀 좌표(x, y)로 변환
+   * - scale(확대/축소)을 반영해 어떤 배율에서도 정확한 셀을 계산한다.
+   * @returns 셀 좌표, 캔버스 영역 밖이면 null
+   */
   const getCell = (clientX: number, clientY: number): { x: number; y: number } | null => {
     if (!a4Ref.current) return null;
     const rect = a4Ref.current.getBoundingClientRect();
@@ -51,8 +55,14 @@ export default function DocumentRenderer() {
     return { x, y };
   };
 
-  // (x,y)에 해당 블록을 놓을 수 있는지 검사
-  // - 그리드 경계를 벗어나지 않고, 다른 블록과 겹치지 않아야 함 (사각형 충돌 검사)
+  /**
+   * (x, y) 위치에 해당 블록을 놓을 수 있는지 검사 (사각형 충돌 검사)
+   * - 그리드 경계를 벗어나지 않고, 다른 블록과도 겹치지 않아야 한다.
+   * @param blockId 놓으려는 블록 ID (자기 자신은 충돌 대상에서 제외)
+   * @param x 검사할 좌상단 X 좌표
+   * @param y 검사할 좌상단 Y 좌표
+   * @returns 놓을 수 있으면 true
+   */
   const canFit = (blockId: string, x: number, y: number) => {
     const block = blocks.find((b) => b.id === blockId);
     if (!block) return false;
@@ -68,7 +78,7 @@ export default function DocumentRenderer() {
     });
   };
 
-  // 드래그 시작 — 대상 블록과 시작 포인터 좌표 기록
+  /** 드래그 시작 — 대상 블록과 시작 포인터 좌표를 기록 */
   const handleDragStart = (event: DragStartEvent) => {
     const block = blocks.find((b) => b.id === event.active.id);
     setDraggingBlock(block ?? null);
@@ -76,7 +86,7 @@ export default function DocumentRenderer() {
     startPointerRef.current = { x: e.clientX, y: e.clientY };
   };
 
-  // 드래그 중 — 현재 포인터 위치의 셀을 계산해 하이라이트(hoveredCell) 갱신
+  /** 드래그 중 — 현재 포인터 위치의 셀을 계산해 하이라이트(hoveredCell)를 갱신 */
   const handleDragMove = (event: DragMoveEvent) => {
     const x = startPointerRef.current.x + event.delta.x;
     const y = startPointerRef.current.y + event.delta.y;
@@ -85,7 +95,7 @@ export default function DocumentRenderer() {
     if (cell.x !== hoveredCell?.x || cell.y !== hoveredCell?.y) setHoveredCell(cell);
   };
 
-  // 드래그 종료 — 놓을 수 있는 위치면 블록 이동, 아니면 무시. 드래그 상태 초기화
+  /** 드래그 종료 — 놓을 수 있는 위치면 블록을 이동하고, 아니면 무시한 뒤 드래그 상태를 초기화 */
   const handleDragEnd = (event: DragEndEvent) => {
     const id = String(event.active.id);
     const x = startPointerRef.current.x + event.delta.x;

@@ -28,7 +28,10 @@ export default function BlockRenderer({ block }: { block: Block }) {
     data: { block },
   })
 
-  // 블록 클릭 시 선택 (부모의 "빈 곳 클릭 → 선택 해제"로 전파되지 않도록 stopPropagation)
+  /**
+   * 블록 클릭 시 해당 블록을 선택 상태로 만든다.
+   * - 부모의 "빈 곳 클릭 → 선택 해제"로 이벤트가 전파되지 않도록 stopPropagation 한다.
+   */
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedBlockId(block.id)

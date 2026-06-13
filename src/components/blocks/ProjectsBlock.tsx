@@ -16,19 +16,29 @@ export default function ProjectsBlock({ block }: props) {
   if (block.type !== "project") return null   // 타입 가드
   const { imageUrl, title, description, role, link } = block.data
 
-  // 텍스트 입력 공통 핸들러 (필드별 생성)
+  /**
+   * 필드명별로 "그 필드만 갱신하는 onChange 핸들러"를 만들어 반환 (커링)
+   * @param field 갱신할 데이터 필드명 (title/description/role/link)
+   */
   const handleChange = (field: keyof ProjectBlockData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       updateBlockData(block.id, { [field]: e.target.value })
     }
 
-  // 토스트 에러 안내 (3초 후 제거)
+  /**
+   * 토스트로 에러를 안내하고 3초 뒤 자동으로 지운다.
+   * @param msg 표시할 에러 문구
+   */
   const showError = (msg: string) => {
     setToastMsg(msg)
     setTimeout(() => setToastMsg(null), 3000)
   }
 
-  // [기능] 프로젝트 이미지 업로드 — 타입/용량 검증 후 base64 변환 저장
+  /**
+   * 프로젝트 대표 이미지 업로드 핸들러
+   * - 이미지 타입·용량(3MB)을 검증한 뒤 FileReader 로 base64(DataURL)로 변환해 imageUrl 에 저장한다.
+   * @param e 파일 input 의 change 이벤트
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ""   // 같은 파일 재선택 대응
@@ -47,7 +57,7 @@ export default function ProjectsBlock({ block }: props) {
     reader.readAsDataURL(file)
   }
 
-  // 블록 크기별 레이아웃 반환
+  /** 블록 크기별 레이아웃 반환 (S: 이미지 없는 입력 / M·L: 대표 이미지 + 입력 항목) */
   const renderContentBySize = () => {
     switch (block.size) {
       case "S":

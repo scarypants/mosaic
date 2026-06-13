@@ -12,13 +12,16 @@ export default function AboutBlock ({ block }: props) {
   if (block.type !== "about") return null   // 타입 가드
   const { title, content } = block.data
 
-  // 필드명을 받아 해당 필드만 갱신하는 onChange 핸들러 생성 (커링)
+  /**
+   * 필드명을 받아 "그 필드만 갱신하는 onChange 핸들러"를 만들어 반환 (커링)
+   * @param field 갱신할 데이터 필드명 ("title" | "content")
+   */
   const handleChange = (field: keyof AboutBlockData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       updateBlockData(block.id, { [field]: e.target.value })
     }
 
-  // 블록 크기별 레이아웃 (S/M: 내용만, L: 제목+내용)
+  /** 블록 크기별 레이아웃 반환 (S/M: 내용만, L: 제목+내용) */
   const renderContentBySize = () => {
     switch(block.size) { 
       case "S":

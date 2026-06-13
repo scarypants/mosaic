@@ -9,15 +9,14 @@ import type { TemplateName } from "../data/templates";
 
 /**
  * Editor 페이지 (문서 편집 화면)
- * - 좌측 Sidebar(블록 추가), 상단 Toolbar(저장/내보내기 등), 우측 PropertyPanel(속성 편집),
- *   중앙 DocumentRenderer(편집 캔버스)로 구성
+ * - 좌측 Sidebar(블록 추가), 상단 Toolbar(저장/내보내기 등), 우측 PropertyPanel(속성 편집), 중앙 DocumentRenderer(편집 캔버스)로 구성
  * - 진입 시 navigate state 에 따라 템플릿/최근문서/빈 캔버스 중 무엇을 띄울지 결정
  */
 export default function Editor() {
   const { selectedBlockId, loadTemplate, loadFromStorage, clearBlocks } = useDocument()
   const location = useLocation()  // Home 에서 넘어올 때 전달된 state(template/fresh/loadRecent) 확인
 
-  // [기능] 진입 시 초기 문서 결정 (최초 1회만 실행 — deps [])
+  // 진입 시 초기 문서 결정 (최초 1회만 실행 — deps [])
   useEffect(() => {
     const state = location.state as { template?: TemplateName; fresh?: boolean; loadRecent?: boolean } | null
     if (!state) return  // preview에서 돌아온 경우 — 블록 유지

@@ -15,21 +15,26 @@ export default function Toolbar () {
   const location = useLocation()   // 경로에 따라 표시할 버튼 결정
   const importInputRef = useRef<HTMLInputElement>(null)   // 숨겨진 파일 input 트리거용
 
-  // 선택된 블록 없이 삭제를 누른 경우 안내
+  /** 선택된 블록 없이 삭제를 누른 경우의 안내 토스트 */
   const errorRemoveBlock = () => {
     setToastMsg("선택된 블록이 없습니다.")
     setTimeout(() => setToastMsg(null), 3000)
   }
 
-  // 토스트 메시지 표시 (3초 후 자동 제거)
+  /**
+   * 토스트 메시지를 띄우고 3초 후 자동으로 지우는 헬퍼
+   * @param msg 표시할 안내 문구
+   */
   const showToast = (msg: string) => {
     setToastMsg(msg)
     setTimeout(() => setToastMsg(null), 3000)
   }
 
-  // [기능] PDF 내보내기
-  // 브라우저 인쇄(window.print) 기능 활용. 인쇄 시에는 확대/축소 transform 을 잠시 해제해
-  // 원본 크기로 출력되도록 하고, 끝나면 원래 transform 을 복구
+  /**
+   * PDF 내보내기 — 브라우저 인쇄(window.print) 기능을 활용한다.
+   * - 인쇄 직전 확대/축소 transform 을 잠시 해제해 원본 크기로 출력되게 하고,
+   *   인쇄가 끝나면(finally) 화면 표시를 원래대로 복구한다.
+   */
   const handleExportPDF = () => {
     const element = document.querySelector("[data-pdf-target]") as HTMLElement | null
     if (!element) {
@@ -52,8 +57,11 @@ export default function Toolbar () {
     }
   }
 
-  // [기능] .mosaic 파일로 저장
-  // 현재 blocks 를 JSON(Blob)으로 만들어 다운로드. 생성한 ObjectURL 은 finally 에서 해제(메모리 누수 방지)
+  /**
+   * 현재 문서를 .mosaic 파일로 저장
+   * - blocks 를 JSON(Blob)으로 만들어 다운로드시키고,
+   *   생성한 ObjectURL 은 finally 에서 해제해 메모리 누수를 막는다.
+   */
   const handleSaveMosaic = () => {
     if (blocks.length === 0) {
       showToast("저장할 내용이 없습니다.")
@@ -76,8 +84,11 @@ export default function Toolbar () {
     }
   }
 
-  // [기능] .mosaic 파일 가져오기 (에디터 내에서)
-  // 확장자 검증 → JSON 파싱 → importBlocks(내부 구조 검증)로 현재 문서 교체
+  /**
+   * .mosaic 파일 가져오기 (에디터 내에서 현재 문서 교체)
+   * - 확장자 검증 → JSON 파싱 → importBlocks(내부 구조 검증) 순으로 처리한다.
+   * @param e 파일 input 의 change 이벤트
+   */
   const handleImportMosaic = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ""   // 같은 파일 재선택 대응
@@ -96,7 +107,11 @@ export default function Toolbar () {
     }
   }
 
-  // 현재 경로(editor/preview)에 맞는 버튼 모음을 반환
+  /**
+   * 현재 경로(editor/preview)에 맞는 툴바 버튼 모음을 반환
+   * - /editor: 삭제 / 가져오기 / 템플릿 변경 / 미리보기
+   * - /preview: 에디터로 돌아가기 / .mosaic 저장 / PDF 내보내기
+   */
   const renderContentByLocation = () => {
     // 편집 화면 툴바: 삭제 / 가져오기 / 템플릿 변경 / 미리보기
     if (location.pathname === "/editor") {

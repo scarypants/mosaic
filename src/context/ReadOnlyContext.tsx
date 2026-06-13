@@ -5,11 +5,18 @@ import { createContext, useContext } from "react"
 
 const ReadOnlyContext = createContext(false)
 
-// 하위 트리를 읽기 전용으로 표시 (Preview 에서 사용)
+/**
+ * 하위 트리를 읽기 전용 모드로 표시하는 Provider (Preview 페이지에서 사용)
+ * - 감싼 영역의 useReadOnly() 가 true 를 반환하게 만든다.
+ */
 export function ReadOnlyProvider({ children }: { children: React.ReactNode }) {
   return <ReadOnlyContext.Provider value={true}>{children}</ReadOnlyContext.Provider>
 }
 
-// 현재 읽기 전용 여부를 구독하는 훅 — 블록들이 입력 비활성화/드래그 차단 등에 사용
+/**
+ * 현재 읽기 전용 여부를 구독하는 훅
+ * - 블록 컴포넌트가 입력 비활성화·드래그 차단 등 미리보기 동작을 켤 때 사용.
+ * @returns 읽기 전용이면 true (Preview), 편집 모드면 false (Editor)
+ */
 // eslint-disable-next-line react-refresh/only-export-components
 export const useReadOnly = () => useContext(ReadOnlyContext)

@@ -3,7 +3,7 @@ import { useDocument } from "../../context/DocumentContext";
 import type { BlockStyle } from "../../types/block";
 import { BLOCK_DEFINITIONS } from "../../data/blockDefinitions";
 
-// 속성 패널의 글씨 크기 선택 옵션 (value "" = 블록 기본값 사용)
+/** 글씨 크기 선택 옵션 — value "" 는 "지정 안 함"(블록 기본값 사용)을 뜻함 */
 const FONT_SIZES: { label: string; value: BlockStyle["fontSize"] | "" }[] = [
   { label: "기본값",        value: "" },
   { label: "XS  (10px)",   value: "xs" },
@@ -15,13 +15,14 @@ const FONT_SIZES: { label: string; value: BlockStyle["fontSize"] | "" }[] = [
   { label: "3XL (48px)",   value: "3xl" },
 ]
 
+/** 글씨 굵기 선택 옵션 (Light / Normal / Bold) */
 const FONT_WEIGHTS: { label: string; value: BlockStyle["fontWeight"] }[] = [
   { label: "Light",  value: "light" },
   { label: "Normal", value: "normal" },
   { label: "Bold",   value: "bold" },
 ]
 
-// 정렬 버튼 옵션 (왼쪽/가운데/오른쪽)
+/** 정렬 버튼 옵션 (왼쪽/가운데/오른쪽) */
 const ALIGN_OPTIONS: { icon: React.ReactNode; value: NonNullable<BlockStyle["textAlign"]> }[] = [
   { icon: <AlignLeft size={15} />,   value: "left" },
   { icon: <AlignCenter size={15} />, value: "center" },
@@ -41,7 +42,10 @@ export default function PropertyPanel() {
   if (!selectedBlock) return null   // 선택된 블록이 없으면 패널 숨김
 
   const style = selectedBlock.style ?? {}
-  // 선택된 블록의 스타일을 부분 갱신하는 헬퍼
+  /**
+   * 선택된 블록의 스타일을 부분 갱신하는 헬퍼
+   * @param patch 변경할 스타일 속성만 담은 객체 (기존 스타일과 병합됨)
+   */
   const update = (patch: Partial<BlockStyle>) => updateBlockStyle(selectedBlock.id, patch)
 
   // 블록 정의에서 기본 정렬을 가져옴 — 정렬을 따로 지정하지 않았을 때 표시 기준

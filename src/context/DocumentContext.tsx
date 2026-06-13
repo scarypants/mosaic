@@ -10,18 +10,31 @@ import { TEMPLATES, type TemplateName } from "../data/templates";
 
 const STORAGE_KEY = "mosaic_autosave"   // 자동저장에 쓰는 localStorage 키
 
-// crypto.randomUUID는 보안 컨텍스트에서만 동작하므로 폴백 제공
+/**
+ * 블록 고유 ID 생성
+ * - crypto.randomUUID는 HTTPS 등 보안 컨텍스트에서만 동작하므로,
+ *   사용 불가 시 timestamp + 랜덤 문자열로 대체 ID를 만든다.
+ * @returns 블록을 식별하는 고유 문자열
+ */
 function genId(): string {
   try {
     if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID()
-  } catch { /* 비보안 컨텍스트 등 — 폴백 사용 */ }
+  } catch { 
+    /* 비보안 컨텍스트 등 — 폴백 사용 */ 
+  }
   return `id-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
 const VALID_TYPES = new Set(BLOCK_DEFINITIONS.map((d) => d.type))
 const VALID_SIZES = new Set(["S", "M", "L", "XL"])
 
-// 외부에서 들어온 blocks(파일/로컬스토리지)가 올바른 구조인지 검증
+/**
+ * 외부에서 들어온 블록 하나가 올바른 구조인지 검증 (타입 가드)
+ * - 파일(.mosaic)/로컬스토리지에서 읽은 데이터를 신뢰하지 않고,
+ *   id·type·size·data 등 필수 필드와 허용된 값인지 확인한다.
+ * @param b 검증할 임의의 값
+ * @returns 유효한 Block 이면 true (이후 Block 타입으로 좁혀짐)
+ */
 function isValidBlock(b: unknown): b is Block {
   if (!b || typeof b !== "object") return false
   const block = b as Record<string, unknown>
@@ -35,6 +48,12 @@ function isValidBlock(b: unknown): b is Block {
   )
 }
 
+/**
+ * 블록 배열을 정제 — 유효한 블록만 남기고 나머지는 걸러낸다.
+ * @param input 검증할 임의의 값 (보통 파싱된 blocks 배열)
+ * @returns 유효한 블록만 담긴 배열
+ * @throws 배열이 아니거나 유효한 블록이 하나도 없으면 에러
+ */
 function sanitizeBlocks(input: unknown): Block[] {
   if (!Array.isArray(input)) throw new Error("blocks가 배열이 아닙니다.")
   const valid = input.filter(isValidBlock)
@@ -42,6 +61,10 @@ function sanitizeBlocks(input: unknown): Block[] {
   return valid
 }
 
+/**
+ * 문서 컨텍스트가 하위 트리에 제공하는 값의 형태
+ * - 상태(blocks, selectedBlockId)와 이를 조작하는 함수들을 모아 정의
+ */
 interface DocumentContextType {
   blocks: Block[]
   selectedBlockId: string | null
@@ -82,7 +105,10 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     }
   }, [blocks])
 
-  // 저장된 최근 문서가 있는지 확인 (홈의 "Recent File" 활성화 판단)
+  /**
+   * 저장된 최근 문서가 있는지 확인 (홈의 "Recent File" 버튼 활성화 판단에 사용)
+   * @returns 자동저장된 블록이 1개 이상이면 true
+   */
   const hasSavedData = (): boolean => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
@@ -94,7 +120,11 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // 로컬스토리지의 자동저장본을 불러옴 — 성공 시 true (손상 항목은 검증으로 걸러냄)
+  /**
+   * 로컬스토리지의 자동저장본을 불러와 현재 문서로 설정
+   * - 손상되었거나 형식이 안 맞는 항목은 sanitizeBlocks 로 걸러낸다.
+   * @returns 불러오기에 성공하면 true, 저장본이 없거나 실패하면 false
+   */
   const loadFromStorage = (): boolean => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
@@ -109,7 +139,12 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // [기능] 블록 추가 — 그리드에서 빈 자리를 찾아 새 블록을 배치
+  /**
+   * 블록 추가 — 그리드에서 겹치지 않는 빈 자리를 찾아 새 블록을 배치한다.
+   * 빈 공간이 없으면 추가하지 않고 토스트로 안내한다.
+   * @param type 추가할 블록 종류 (예: "title", "profile")
+   * @param size 블록 크기 (S/M/L/XL)
+   */
   const addBlock = (type: BlockType, size: BlockSize) => {
     const definition = BLOCK_DEFINITIONS.find((d) => d.type === type)
     if (!definition) return
@@ -158,40 +193,63 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  // [기능] 블록 내용(data) 부분 갱신 — 입력 필드 변경 시 사용
+  /**
+   * 블록 내용(data) 부분 갱신 — 입력 필드가 바뀔 때마다 호출
+   * @param id 대상 블록 ID
+   * @param data 갱신할 필드만 담은 부분 객체 (기존 data 와 병합됨)
+   */
   const updateBlockData = (id: string, data: Partial<Block["data"]>) => {
     setBlocks((prev) =>
       prev.map((block) => block.id === id ? { ...block, data: { ...block.data, ...data } } as Block : block)
     )
   }
 
-  // [기능] 블록 스타일(style) 부분 갱신 — 속성 패널에서 사용
+  /**
+   * 블록 스타일(style) 부분 갱신 — 속성 패널에서 글꼴/정렬/테두리 변경 시 호출
+   * @param id 대상 블록 ID
+   * @param style 갱신할 스타일 속성만 담은 부분 객체 (기존 style 과 병합됨)
+   */
   const updateBlockStyle = (id: string, style: Partial<BlockStyle>) => {
     setBlocks((prev) =>
       prev.map((block) => block.id === id ? { ...block, style: { ...block.style, ...style } } : block)
     )
   }
 
-  // [기능] 블록 삭제
+  /**
+   * 블록 삭제
+   * @param id 삭제할 블록 ID
+   */
   const removeBlock = (id: string) => {
     setBlocks((prev) => prev.filter((b) => b.id !== id))
   }
 
-  // [기능] 블록 이동 — 드래그&드롭으로 결정된 새 그리드 좌표로 position 갱신
+  /**
+   * 블록 이동 — 드래그&드롭으로 결정된 새 그리드 좌표로 position 을 갱신
+   * @param id 이동할 블록 ID
+   * @param x 새 그리드 X 좌표 (0~3)
+   * @param y 새 그리드 Y 좌표 (0~5)
+   */
   const moveBlock = (id: string, x: number, y: number) => {
     setBlocks((prev) =>
       prev.map((block) => (block.id === id ? {...block, position: {x, y}} : block))
     )
   }
 
-  // 외부 데이터를 받으므로 검증 후 적용 — 잘못된 구조면 throw하여 호출측에서 toast 처리
+  /**
+   * 외부 블록 데이터를 가져와 현재 문서를 교체 (.mosaic 가져오기 등)
+   * - 외부 입력이므로 검증 후 적용하며, 구조가 잘못되면 throw 하여 호출측에서 토스트 처리한다.
+   * @param newBlocks 가져올 블록 배열(검증 전)
+   * @throws 유효한 블록이 없으면 sanitizeBlocks 가 에러를 던짐
+   */
   const importBlocks = (newBlocks: unknown) => {
     const sanitized = sanitizeBlocks(newBlocks)
     setBlocks(sanitized)
     setSelectedBlockId(null)
   }
 
-  // [기능] 문서 비우기 — 블록과 자동저장본을 모두 제거 (새 문서/템플릿 변경 시)
+  /**
+   * 문서 비우기 — 블록과 자동저장본을 모두 제거 (새 문서 시작/템플릿 변경 시)
+   */
   const clearBlocks = () => {
     setBlocks([])
     setSelectedBlockId(null)
@@ -202,7 +260,10 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // [기능] 템플릿 로드 — 템플릿 정의대로 새 블록들을 생성해 문서를 구성
+  /**
+   * 템플릿 로드 — 템플릿 정의(TEMPLATES)대로 새 블록들을 생성해 문서를 구성
+   * @param name 적용할 템플릿 이름 (예: "resume", "portfolio")
+   */
   const loadTemplate = (name: TemplateName) => {
     const template = TEMPLATES[name]
     if (!template) {
@@ -262,7 +323,11 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// 문서 컨텍스트 접근 훅 — Provider 밖에서 쓰면 즉시 에러로 알림
+/**
+ * 문서 컨텍스트 접근 훅 — 컴포넌트에서 문서 상태와 조작 함수를 꺼내 쓸 때 사용.
+ * DocumentProvider 밖에서 호출하면 즉시 에러를 던져 잘못된 사용을 알린다.
+ * @returns 문서 상태와 blocks 조작 함수들이 담긴 객체
+ */
 // eslint-disable-next-line react-refresh/only-export-components
 export function useDocument() {
   const context = useContext(DocumentContext);

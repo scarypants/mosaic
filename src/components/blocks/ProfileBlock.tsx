@@ -21,7 +21,10 @@ export default function ProfileBlock ({ block }: props) {
   if (block.type !== "profile") return null   // 타입 가드
   const { name, englishName, imageUrl, email, phone, bid } = block.data
 
-  // 텍스트 입력 공통 핸들러 (필드별 생성)
+  /**
+   * 필드명별로 "그 필드만 갱신하는 onChange 핸들러"를 만들어 반환 (커링)
+   * @param field 갱신할 데이터 필드명 (name/englishName/email/phone/bid)
+   */
   const handleChange = (field: keyof ProfileBlockData) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateBlockData(block.id, { [field]: e.target.value })
@@ -29,14 +32,20 @@ export default function ProfileBlock ({ block }: props) {
 
   const today = new Date().toISOString().split("T")[0]   // 생년월일 max 값(미래 날짜 차단)
 
-  // 토스트로 에러 안내 후 3초 뒤 자동 제거
+  /**
+   * 토스트로 에러를 안내하고 3초 뒤 자동으로 지운다.
+   * @param msg 표시할 에러 문구
+   */
   const showError = (msg: string) => {
     setToastMsg(msg)
     setTimeout(() => setToastMsg(null), 3000)
   }
 
-  // [기능] 프로필 사진 업로드
-  // 이미지 타입/용량을 검증한 뒤 FileReader 로 base64 변환해 imageUrl 에 저장
+  /**
+   * 프로필 사진 업로드 핸들러
+   * - 이미지 타입·용량(3MB)을 검증한 뒤 FileReader 로 base64(DataURL)로 변환해 imageUrl 에 저장한다.
+   * @param e 파일 input 의 change 이벤트
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ""   // 같은 파일 재선택 시에도 onChange 발생하도록 초기화
@@ -55,7 +64,7 @@ export default function ProfileBlock ({ block }: props) {
     reader.readAsDataURL(file)
   }
 
-  // 블록 크기별 레이아웃 반환
+  /** 블록 크기별 레이아웃 반환 (S: 핵심 3항목 / M: 사진+기본정보 / L: 표 형태 전체 항목) */
   const renderContentBySize = () => {
     switch(block.size) {
       case "S":

@@ -11,15 +11,17 @@ import { useDocument } from "../context/DocumentContext";
  * - scroll-snap 으로 섹션 단위 스크롤 UX 제공
  */
 export default function Home () {
-  const navigate = useNavigate()              // 프로그래밍 방식 페이지 이동
-  const location = useLocation()              // 현재 경로/해시(#about 등) 확인용
-  const { importBlocks, hasSavedData, setToastMsg } = useDocument()  // 전역 문서 상태
-  const hasSaved = hasSavedData()             // 저장된 최근 문서 존재 여부 (Recent File 활성화 판단)
+  const navigate = useNavigate()
+  const location = useLocation()
+  // 전역 문서 상태
+  const { importBlocks, hasSavedData, setToastMsg } = useDocument()
+  // 저장된 최근 문서 존재 여부 (Recent File 버튼 활성화 판단)
+  const hasSaved = hasSavedData()
 
   const heroRef = useRef<HTMLElement>(null)           // Hero 섹션 DOM 참조 (휠 스크롤 영역 판정)
   const imageContainerRef = useRef<HTMLDivElement>(null)  // Hero 이미지 스크롤 컨테이너 참조
 
-  // [기능] scroll-snap 활성화
+  // scroll-snap 활성화
   // 홈에 들어올 때만 body 에 snap-home 클래스를 붙여 섹션 단위 스크롤을 켜고,
   // 페이지를 떠날 때(cleanup) 다시 제거해 다른 페이지에 영향을 주지 않음
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function Home () {
     return () => document.body.classList.remove("snap-home")
   }, [])
 
-  // [기능] Hero 이미지 우선 스크롤
+  // Hero 이미지 우선 스크롤
   // Hero 의 긴 이력서 이미지를 먼저 끝까지 스크롤한 뒤에야 다음 섹션으로 넘어가도록 휠 이벤트를 가로챔
   useEffect(() => {
     const container = imageContainerRef.current
@@ -57,18 +59,23 @@ export default function Home () {
     return () => window.removeEventListener("wheel", onWheel)
   }, [])
 
-  // [기능] .mosaic 파일 가져오기
-  // 파일 선택 → 확장자 검증 → JSON 파싱 → 블록 검증/주입 → 에디터로 이동
+  /**
+   * .mosaic 파일 가져오기
+   * - 파일 선택 → 확장자 검증 → JSON 파싱 → 블록 검증/주입 → 에디터로 이동 순으로 처리한다.
+   * @param e 파일 input 의 change 이벤트
+   */
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ""  // 같은 파일을 다시 선택해도 onChange 가 발생하도록 초기화
     if (!file) return
+
     // 확장자 검증 — .mosaic 이 아니면 토스트로 안내 후 중단
     if (!file.name.endsWith(".mosaic")) {
       setToastMsg(".mosaic 파일만 불러올 수 있습니다.")
       setTimeout(() => setToastMsg(null), 3000)
       return
     }
+
     try {
       const text = await file.text()
       const data = JSON.parse(text)
@@ -82,7 +89,7 @@ export default function Home () {
     }
   }
 
-  // [기능] 해시(#about, #start, #templates) 스크롤 이동
+  // 해시(#about, #start, #templates) 스크롤 이동
   // NavBar 링크로 들어온 해시를 감지해 해당 섹션으로 부드럽게 스크롤한 뒤,
   // 주소창에서 해시를 제거(replace)해 새로고침/뒤로가기 시 다시 점프하지 않게 함
   useEffect(() => {
@@ -95,13 +102,6 @@ export default function Home () {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.hash]);
 
-  // "Why MOSAIC?" 섹션의 소개 카드 3종 데이터
-  const aboutList = [
-    {title: "Designed for Identity", caption: "누구나 같은 이력서가 아닌자신만의 스타일을 표현할 수 있습니다.", icon: <Sparkles />},
-    {title: "Modular Sections", caption: "블록을 추가하고 조정하며원하는 구조를 직접 만들어갑니다.", icon: <LayoutGrid />},
-    {title: "Export & Share", caption: "PDF와 .mosaic 파일로 내보내도 언제든 다시 불러와 이어서 편집할 수 있습니다.", icon: <FileUp />},
-  ]
-
   // "Templates" 섹션의 템플릿 카드 데이터 (key=null 은 빈 캔버스 Custom)
   const templateList: { title: string; icon: React.ReactNode; key: TemplateName | null }[] = [
     { title: "Resume",    icon: <User size={80} />,         key: "resume" },
@@ -109,7 +109,10 @@ export default function Home () {
     { title: "Custom",    icon: <Columns3Cog size={80} />,  key: null },
   ]
 
-  // [기능] 템플릿 선택 → 에디터로 이동하면서 어떤 템플릿을 적용할지 state 로 전달
+  /**
+   * 템플릿 선택 — 에디터로 이동하면서 적용할 템플릿을 navigate state 로 전달
+   * @param key 적용할 템플릿 이름, null 이면 빈 캔버스(Custom)
+   */
   const handleUseTemplate = (key: TemplateName | null) => {
     navigate("/editor", { state: { template: key } })
   }
@@ -141,15 +144,27 @@ export default function Home () {
             <h1 className="text-5xl font-bold text-center mb-4">Why MOSAIC?</h1>
             <p className="text-center text-neutral-content/70 mb-14">자유로운 블록 편집으로 완성하는 나만의 문서</p>
             <div className="flex justify-center gap-8">
-              {aboutList.map((item) => (
-                <div key={item.title} className="bg-base-100 text-base-content rounded-2xl p-8 flex flex-col items-center text-center gap-5 w-72 shadow-lg">
-                  <div className="text-primary bg-primary/10 rounded-full p-4">
-                    {item.icon}
-                  </div>
-                  <h2 className="font-bold text-xl">{item.title}</h2>
-                  <p className="text-base-content/60 text-sm leading-relaxed">{item.caption}</p>
+              <div className="bg-base-100 text-base-content rounded-2xl p-8 flex flex-col items-center text-center gap-5 w-72 shadow-lg">
+                <div className="text-primary bg-primary/10 rounded-full p-4">
+                  <Sparkles />
                 </div>
-              ))}
+                <h2 className="font-bold text-xl">Designed for Identity</h2>
+                <p className="text-base-content/60 text-sm leading-relaxed">누구나 같은 이력서가 아닌자신만의 스타일을 표현할 수 있습니다.</p>
+              </div>
+              <div className="bg-base-100 text-base-content rounded-2xl p-8 flex flex-col items-center text-center gap-5 w-72 shadow-lg">
+                <div className="text-primary bg-primary/10 rounded-full p-4">
+                  <LayoutGrid />
+                </div>
+                <h2 className="font-bold text-xl">Modular Sections</h2>
+                <p className="text-base-content/60 text-sm leading-relaxed">블록을 추가하고 조정하며원하는 구조를 직접 만들어갑니다.</p>
+              </div>
+              <div className="bg-base-100 text-base-content rounded-2xl p-8 flex flex-col items-center text-center gap-5 w-72 shadow-lg">
+                <div className="text-primary bg-primary/10 rounded-full p-4">
+                  <FileUp />
+                </div>
+                <h2 className="font-bold text-xl">Export & Share</h2>
+                <p className="text-base-content/60 text-sm leading-relaxed">PDF와 .mosaic 파일로 내보내도 언제든 다시 불러와 이어서 편집할 수 있습니다.</p>
+              </div>
             </div>
           </div>
         </section>
@@ -190,7 +205,7 @@ export default function Home () {
                 </div>
               )}
             </div>
-            {/* Import .mosaic — 숨겨진 file input 을 label 로 트리거 → handleImportFile 처리 */}
+            {/* Import .mosaic — 숨겨진 file input 을 label 로 트리거 후 handleImportFile 처리 */}
             <div className="hover:bg-accent hover:text-accent-content row-span-2 bg-base-100">
               <label htmlFor="file" className="flex h-full w-full items-center p-8 cursor-pointer">
                 <Download size={56} className="m-3" />

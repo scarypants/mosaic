@@ -20,7 +20,11 @@ export default function EducationBlock({ block }: props) {
   if (block.type !== "education") return null   // 타입 가드
   const { items } = block.data
 
-  // [기능] 특정 항목(index)의 특정 필드(field)만 불변 갱신
+  /**
+   * 학력 목록(items) 중 특정 항목의 특정 필드만 불변 방식으로 갱신하는 핸들러를 만들어 반환
+   * @param index 갱신할 항목의 인덱스
+   * @param field 갱신할 필드명 (periodStart/school/major/graduated 등)
+   */
   const handleChange = (index: number, field: keyof EducationBlockData["items"][number]) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const newItems = items.map((item, i) =>
@@ -29,7 +33,7 @@ export default function EducationBlock({ block }: props) {
       updateBlockData(block.id, { items: newItems });
     };
 
-  // 블록 크기별 레이아웃 반환 (M: 간단 / L: 표)
+  /** 블록 크기별 레이아웃 반환 (M: 간단 목록 / L: 기간·학교·학과·졸업여부 4열 표) */
   const renderContentBySize = () => {
     switch (block.size) {
       case "M":
